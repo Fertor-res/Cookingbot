@@ -8,6 +8,19 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 import streamlit as st
 
+st.set_page_config(
+    page_title="Your Virtual Chef",
+    page_icon="🍳",
+    layout="centered",
+    theme={
+        "base": "light",
+        "primaryColor": "#f49a0aff",     # Accent color for buttons, sliders, etc.
+        "backgroundColor": "#ffffffc0",  # Page background. Currently hidden by a picture
+        "textColor": "#1704e4ff"         # Blue text
+    }
+)
+
+
 # Changing the chat background for an image:
 from pathlib import Path
 import base64
@@ -34,6 +47,7 @@ def set_app_background(image_file):
 def set_chat_background(image_file):
     with open(image_file, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
+
 # CSS stands for Cascading Style Sheets, and it’s the language used to style and visually design web pages.
 
     css = f"""   
@@ -51,11 +65,11 @@ def set_chat_background(image_file):
     st.markdown(css, unsafe_allow_html=True)
 
 # Full app background
-full_bg_path = Path(__file__).parent / "kitchen_wall.jpg"
+full_bg_path = Path(__file__).parent /"Background"/ "kitchen_wall.jpg"
 set_app_background(str(full_bg_path))
 
-# Call this function once at the top of your app. Assumes the file is in the same folder as the Jupyter notebook.
-image_path = Path(__file__).parent / "kitchen_background.jpg"
+# Set the chat background
+image_path = Path(__file__).parent /"Background"/ "kitchen_background.jpg"
 set_chat_background(str(image_path))
 
 
@@ -65,6 +79,7 @@ prompt_options = {
     'basic_context': (
         'You are a chatbot with two modes: Beginner and Expert. '
         'You are a helpful chatbot having a conversation with a human. '
+        """if you are queried to do something outside the topic cooking, answer with 'Sorry, I only can cook'"""
         ),
     'Beginner': (
         'YOU ARE NOW IN BEGINNER MODE, change your behavior if needed. '
@@ -101,7 +116,7 @@ def init_rag(num_chunks=2):
     # RAG
     embeddings = HuggingFaceEmbedding(
         model_name="sentence-transformers/all-MiniLM-L6-v2",
-        cache_folder="./embedding_model/",
+        #cache_folder="./embedding_model/",
     )
     storage_context = StorageContext.from_defaults(persist_dir="./vector_index")
     vector_index = load_index_from_storage(storage_context, embed_model=embeddings)
