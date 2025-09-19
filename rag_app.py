@@ -8,17 +8,23 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 import streamlit as st
 
+# configure the page 
 st.set_page_config(
-    page_title="Your Virtual Chef",
+    page_title="Find your recipes!",
     page_icon="🍳",
     layout="centered",
-    theme={
-        "base": "light",
-        "primaryColor": "#f49a0aff",     # Accent color for buttons, sliders, etc.
-        "backgroundColor": "#ffffffc0",  # Page background. Currently hidden by a picture
-        "textColor": "#1704e4ff"         # Blue text
-    }
 )
+# Apply colors via CCS
+
+st.markdown("""
+<style>
+:root {
+    --primary-color: #f49a0aff;
+    --background-color: #ffffffaa;
+    --text-color: #056ce9ff;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 # Changing the chat background for an image:
@@ -43,17 +49,18 @@ def set_app_background(image_file):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-
 def set_chat_background(image_file):
+    import base64
     with open(image_file, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
 
-# CSS stands for Cascading Style Sheets, and it’s the language used to style and visually design web pages.
-
-    css = f"""   
+    css = f"""
     <style>
     .stChatMessage {{
-        background-image: url("data:image/jpg;base64,{encoded}");
+        /* Layer 1: gradient overlay, Layer 2: your image */
+        background-image:
+            linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.5)),
+            url("data:image/jpg;base64,{encoded}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -65,35 +72,16 @@ def set_chat_background(image_file):
     st.markdown(css, unsafe_allow_html=True)
 
 # Full app background
-full_bg_path = Path(__file__).parent /"Background"/ "kitchen_wall.jpg"
+full_bg_path = Path(__file__).parent / "kitchen_wall.jpg"
 set_app_background(str(full_bg_path))
 
 # Set the chat background
-image_path = Path(__file__).parent /"Background"/ "kitchen_background.jpg"
+image_path = Path(__file__).parent / "kitchen_background.jpg"
 set_chat_background(str(image_path))
 
 
 
-# Setting up system prompt options:
-prompt_options = {
-    'basic_context': (
-        'You are a chatbot with two modes: Beginner and Expert. '
-        'You are a helpful chatbot having a conversation with a human. '
-        """if you are queried to do something outside the topic cooking, answer with 'Sorry, I only can cook'"""
-        ),
-    'Beginner': (
-        'YOU ARE NOW IN BEGINNER MODE, change your behavior if needed. '
-        'You are a helpful chatbot having a conversation with a human. '
-        'Look for easy to cook recipes. Ask always the number of people the user will cook for. Adjust your answer to that number of people. Present the ingredients first in bullet points, after that, the cooking instructions as detailed as possible and include preparation times'
-        ),
-    'Expert': (
-        'YOU ARE NOW IN EXPERT MODE, change your behavior if needed. '
-        'Search for complex recipes. Ask always the number of people the user will cook for. Adjust your answer to that number of people. Present the ingredients first in bullet points, after that, the cooking instructions with a low level of detail unless the user specify otherwise and include preparation times '
-        )
-}
-# Setting up session state to store current system prompt setting
-if 'system_prompts' not in st.session_state:
-    st.session_state['system_prompts'] = ['basic_context'] #making it a list allow it to have multiple at once
+
 
 ### INITIALIZING AND CACHING CHATBOT COMPONENTS ###
 
@@ -199,6 +187,32 @@ st.session_state['system_prompts'] = [
     f"You are preparing a {selected_type.lower()} recipe. Adjust your suggestions accordingly."
 ]
 
+# Setting up session state to store current system prompt setting
+if 'system_prompts' not in st.session_state:
+    st.session_state['system_prompts'] = ['basic_context', selected_mode, f"You are preparing a {selected_type.lower()} recipe. Adjust your suggestions accordingly."
+] #making it a list allow it to have multiple at once
+
+
+# Setting up system prompt options:
+prompt_options = {
+    'basic_context': (
+        'You are a chatbot with two modes: Beginner and Expert. '
+        f"You are preparing a {selected_type.lower()} recipe. Adjust your suggestions accordingly."
+        'You are a helpful chatbot having a conversation with a human. '
+        'Give priority to the recipes feed to you in the .pdf files provided to you'
+        "Everytime you are queried to do something outside the topic cooking, answer with 'Sorry, I can only cook'. Do not answer outside the world of cooking."
+        "At the bottom of the recipe, please provide the source from where you took the information"
+        ),
+    'Beginner': (
+        'YOU ARE NOW IN BEGINNER MODE, change your behavior if needed. '
+        'You are a helpful chatbot having a conversation with a human. '
+        'Look for easy to cook recipes. Ask always the number of people the user will cook for. Adjust your answer to that number of people. Present the ingredients first in bullet points, after that, the cooking instructions as detailed as possible and include preparation times'
+        ),
+    'Expert': (
+        'YOU ARE NOW IN EXPERT MODE, change your behavior if needed. '
+        'Search for complex recipes. Ask always the number of people the user will cook for. Adjust your answer to that number of people. Present the ingredients first in bullet points, after that, the cooking instructions with a low level of detail unless the user specify otherwise and include preparation times '
+        )
+}
 
 
 ### CHAT ###
